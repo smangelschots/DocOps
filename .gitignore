@@ -128,3 +128,29 @@ dist
 .yarn/build-state.yml
 .yarn/install-state.gz
 .pnp.*
+
+# Visual Studio files
+.vs/
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+
+# Rider files
+.idea/
+
+# .NET Core/ASP.NET Core
+bin/
+obj/
+*.dll
+*.exe
+*.pdb
+*.app
+*.lib
+*.so
+*.dylib
+*.log
+
+# DocFX generated files
+_site/
+docs/
