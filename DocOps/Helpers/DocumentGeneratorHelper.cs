@@ -1,8 +1,10 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using DocOps.Models;
 
 namespace DocOps.Helpers
 {
@@ -19,9 +21,17 @@ namespace DocOps.Helpers
 
         public static int GenerateCommand(GenerateOptions opts)
         {
-            Console.WriteLine("Generating documentation...");
-            // Add your documentation generation logic here
-            return 0;
+            // Call DocFX
+            var processInfo = new ProcessStartInfo("docfx", "build")
+            {
+                RedirectStandardOutput = true,
+                RedirectStandardError = true,
+                UseShellExecute = false,
+                CreateNoWindow = true,
+            };
+            var process = Process.Start(processInfo);
+            process.WaitForExit();
+            return process.ExitCode;
         }
 
 
