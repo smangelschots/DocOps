@@ -1,6 +1,7 @@
 ﻿using CommandLine;
 using DocOps.Helpers;
-using DocOps.Models;
+using DocOps.Options;
+using DocOps.Results;
 using NLog;
 using NLog.Targets;
 
@@ -21,7 +22,12 @@ namespace DocOps.Cli
             var config = new NLog.Config.LoggingConfiguration();
             var logConsole = new ColoredConsoleTarget("logconsole")
             {
-                Layout = "${date:format=HH\\:MM\\:ss} ${logger} ${message}"
+                Layout = "${date:format=HH\\:MM\\:ss} ${logger} ${message}",
+                DetectConsoleAvailable= true,
+                DetectOutputRedirected = true,
+                EnableAnsiOutput = true,
+                UseDefaultRowHighlightingRules = true,
+                
             };
 
             var logFileName = Path.Combine(currentPath, $"logs/log_{DateTime.Now:yyMMdd}.txt");
@@ -51,9 +57,13 @@ namespace DocOps.Cli
             return logFileName;
         }
 
-        public static void ExecuteCommandLine(string[] args)
+        public static CommandResult ExecuteCommandLine(string[] args)
         {
             bool isHuman = false;
+
+
+            CommandResult commandResult = null;
+
 
             Console.WriteLine("Initializing DocOps...");
             if (args.Length == 0)
@@ -71,18 +81,33 @@ namespace DocOps.Cli
             Logger.Info($"Executing DocOps with command {string.Join(" ", args)}.");
 
             Parser.Default.ParseArguments<InitOptions, GenerateOptions>(args)
-                .MapResult(
-                    (InitOptions opts) => DocumentGeneratorHelper.InitCommand(opts),
-                    (GenerateOptions opts) => DocumentGeneratorHelper.GenerateCommand(opts),
-                    errs => {
+                .MapResult<InitOptions, GenerateOptions, CommandResult>(
+                    (InitOptions opts) =>
+                    {
+                        DocumentGeneratorHelper.InitCommand(opts, Logger);
+                        return CommandResult.SuccessResult("DocOps initialized successfully.");
+                    },
+                    (GenerateOptions opts) => { 
+                        DocumentGeneratorHelper.GenerateCommand(opts); 
+                        return CommandResult.SuccessResult("Documentation generated successfully.");
+                    },
+                    errs =>
+                    {
                         Logger.Error($"Invalid command. Please use 'init' or 'generate'. {errs.ToString()}");
-                        return 1; }
+                        commandResult = CommandResult.ErrorResult("Invalid command. Please use 'init' or 'generate'", "");
+                        return commandResult;
+                    }
                 );
+
 
             if (isHuman)
             {
+                Console.WriteLine("Press any key to exit.");
                 Console.ReadLine();
             }
+
+            if(commandResult == null) commandResult = CommandResult.ErrorResult("Invalid command. Please use 'init' or 'generate'", "");
+            return commandResult;
         }
 
         private static void DisplayHelp()
